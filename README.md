@@ -1,3 +1,14 @@
+Branch Details: Currently adding Xbee Wifi support
+
+Being developed on an S6 (obsolete) with firmware version 102d
+ - There seems to be a discrepancy between the documentation and the module I am using, the application header is not 
+   being sent with periodic IO samples, nor will it accept the application header in packets. Everything seems to work
+   when the message begins at the Command ID.
+ - S6 manual [http://ftp1.digi.com/support/documentation/90002124_K.pdf]
+ - S6B manual [http://ftp1.digi.com/support/documentation/90002180_H.pdf]  (This should be tested next)
+
+
+
 # xbee-api [![Build Status](https://travis-ci.org/jankolkmeier/xbee-api.svg?branch=master)](https://travis-ci.org/jankolkmeier/xbee-api)
 
 The [xbee-api](http://github.com/jankolkmeier/xbee-api/) [Node.js](http://nodejs.org/) module helps you

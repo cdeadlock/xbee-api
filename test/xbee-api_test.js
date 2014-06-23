@@ -34,18 +34,77 @@ exports['Main'] = {
     test.equal(xbeeAPI3.options.api_mode, 1, "Are default options left untouched?");
 
     test.done();
-  },
+  }
 };
 
 exports['API Frame building'] = { // These have to be tested both for AP=1 and 2
-  'AT Command Requests': function(test) {
+    'Bad module configuration': function(test) {
+        test.expect(1);
+
+        var frame = {
+            type: C.WIFI_COMMAND_ID.REMOTE_COMMAND,
+            id: 0x57,
+            command: "ID",
+            commandParameter: []
+        };
+
+        var xbeeAPI = new xbee_api.XBeeAPI({
+            module: "non-existant"
+        });
+        test.throws(function() {
+            xbeeAPI.buildFrame(frame)
+        }, Error, "Expected runtime error on bad config");
+
+        test.done();
+    },
+    'Wifi AT Command Bitwise options': function(test) {
+        test.expect(1);
+
+        var frame = {
+            type: C.WIFI_COMMAND_ID.REMOTE_COMMAND,
+            id: 0x57,
+            commandOptions: C.WIFI_COMMAND_OPTIONS.REQUEST_ACK,
+            configOptions: [C.WIFI_CONFIGURATION_OPTIONS.APPLY_CHANGES, 0x01],
+            command: "ID",
+            commandParameter: []
+        };
+
+        //ATID
+        var expected0 = new Buffer([ 0x02, 0x02, 0x57, 0x03, 0x49, 0x44]);
+
+        var xbeeAPI = new xbee_api.XBeeAPI({
+            module: C.MODULE_ID.WIFI
+        });
+        test.deepEqual(expected0, xbeeAPI.buildFrame(frame), "create raw frame");
+        test.done();
+    },
+    'Wifi AT Command Request': function(test) {
+        test.expect(1);
+
+        var frame = {
+            type: C.WIFI_COMMAND_ID.REMOTE_COMMAND,
+            id: 0x57,
+            command: "ID",
+            commandParameter: []
+        };
+
+        //ATID
+        var expected0 = new Buffer([ 0x02, 0x00, 0x57, 0x00, 0x49, 0x44]);
+
+        var xbeeAPI = new xbee_api.XBeeAPI({
+            module: C.MODULE_ID.WIFI
+        });
+        test.deepEqual(expected0, xbeeAPI.buildFrame(frame), "create raw frame");
+        test.done();
+    },
+    'AT Command Requests': function(test) {
     test.expect(1);
 
     var frame = {
       type: C.FRAME_TYPE.AT_COMMAND,
       id: 0x52,
       command: "NJ",
-      commandParameter: [],
+      commandParameter: []
     };
 
     // AT Command; 0x08; Queries ATNJ
@@ -112,7 +171,7 @@ exports['API Frame building'] = { // These have to be tested both for AP=1 and 2
     test.deepEqual(expected0, xbeeAPI.buildFrame(frame), "create raw frame");
     test.done();
   }
-}
+};
 
 
 exports['API Frame Parsing'] = {
@@ -194,6 +253,29 @@ exports['API Frame Parsing'] = {
     var rawFrame = new Buffer([ 0x7E, 0x00, 0x12, 0x90, 0x00, 0x13, 0xA2, 0x00, 0x40, 0x52, 0x2B, 0xAA, 0x7D, 0x84, 0x01, 0x52, 0x78, 0x44, 0x61, 0x74, 0x61, 0x0D ]);
     parser(null, rawFrame);
   },
+    'Xbee Wifi IO Data Sample Rx': function(test) {
+        test.expect(4);
+        var xbeeAPI = new xbee_api.XBeeAPI({
+            module: C.MODULE_ID.WIFI
+        });
+        var parser = xbeeAPI.rawParser();
+
+        xbeeAPI.once("frame_object", function(frame) {
+            test.equal(frame.type, C.WIFI_COMMAND_ID.IO_SAMPLE, "io sample");
+            test.equal(frame.numSamples, 1, "Parse number of samples");
+            test.deepEqual(frame.digitalSamples, {
+                "DIO0": 1,
+                "DIO8": 0
+            }, "Parsing digital samples");
+            test.ok( 599 <= frame.analogSamples["AD1"] &&
+                frame.analogSamples["AD1"] <= 601 , "0x200 to mV, is 512 * 1200 / 1024 rounded");
+            test.done();
+        });
+
+        // Receive IO Data Sample; 0x92; ...
+        var rawFrame = new Buffer([ 0x04, 0x00, 0x01, 0x01, 0x01, 0x02, 0x00, 0x01, 0x02, 0x00 ]);
+        parser(null, rawFrame);
+    },
   'ZigBee IO Data Sample Rx': function(test) {
     test.expect(6);
     var xbeeAPI = new xbee_api.XBeeAPI();

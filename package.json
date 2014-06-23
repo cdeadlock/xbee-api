@@ -34,7 +34,8 @@
     "grunt-contrib-nodeunit": "~0.2.0",
     "grunt-contrib-watch": "~0.4.0",
     "grunt-browserify": "~1.2.11",
-    "grunt": "~0.4.1"
+    "grunt": "~0.4.1",
+    "node.extend": "1.0.10"
   },
   "keywords": []
 }
